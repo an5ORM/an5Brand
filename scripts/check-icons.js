@@ -18,15 +18,21 @@ const { generate, loadTokens } = require('./generate-icons');
 const ROOT = path.resolve(__dirname, '..');
 const ICONS_DIR = path.join(ROOT, 'icons');
 
-/** Bounding box of the near-white wordmark, in 0..100 viewBox units. */
-async function inkBox(file, size) {
-  const { data, info } = await sharp(file)
+/**
+ * Bounding box of the near-white wordmark, in 0..100 viewBox units.
+ *
+ * Measured by rendering the SVG at a high resolution: upscaling a small
+ * committed PNG drops the antialiased edge column and shifts the box, which
+ * would make the placement assertions unreliable.
+ */
+async function inkBox(svg, sampleSize = 2048) {
+  const { data, info } = await sharp(Buffer.from(svg))
+    .resize(sampleSize, sampleSize)
     .flatten({ background: '#000000' })
     .greyscale()
-    .resize(size, size, { kernel: 'nearest' })
     .raw()
     .toBuffer({ resolveWithObject: true });
-  const k = 100 / size;
+  const k = 100 / sampleSize;
   let x0 = Infinity, x1 = -1, y0 = Infinity, y1 = -1;
   for (let y = 0; y < info.height; y++) {
     for (let x = 0; x < info.width; x++) {
@@ -85,13 +91,12 @@ async function main() {
   }
 
   // 3. Wordmark placement matches the tokens.
-  const probe = 1024;
-  const file = path.join(ICONS_DIR, `${tokens.icons.wordmarkFile.replace(/\{size\}/g, tokens.icons.defaultSize)}.png`);
-  const box = await inkBox(file, probe);
+  const svgPath = path.join(ICONS_DIR, `${tokens.icons.wordmarkFile.replace(/\{size\}/g, tokens.icons.defaultSize)}.svg`);
+  const box = await inkBox(fs.readFileSync(svgPath, 'utf8'));
   const cap = box.y1 - box.y0;
   const centre = (box.x0 + box.x1) / 2;
-  const capTol = 0.6;
-  const centreTol = 0.6;
+  const capTol = 0.3;
+  const centreTol = 0.3;
   assert.ok(Math.abs(cap - tokens.wordmark.capHeight) <= capTol,
     `cap height ${cap.toFixed(2)} is not ${tokens.wordmark.capHeight} (+/-${capTol})`);
   assert.ok(Math.abs(box.y1 - tokens.wordmark.baseline) <= capTol,

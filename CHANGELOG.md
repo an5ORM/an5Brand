@@ -28,3 +28,30 @@ All notable changes to the AN5 brand assets are documented here. The format foll
   PNGs rendered from them.
 - The badge is a 90 × 52 rectangle in every variant, including `activity.svg`, which
   previously used a square badge that did not match the organisation wordmark.
+- Added the `wordmark.embolden` and `wordmark.tracking` tokens. `embolden` strokes
+  the outline outward to reach the weight of the original artwork; `tracking` widens
+  the gaps between letters and defaults to `0`. The generator solves the font size so
+  the stroked ink still lands on the `wordmark.capHeight` measured from the artwork.
+
+### Added
+
+- `scripts/assets.js` for the brand assets beyond the icon set: `faviconSvg`,
+  `badgeMarkup`, `ogImageSvg`, `syncFavicons`, `verifyFavicons`, and `cssTokens` /
+  `syncCss` which inject the brand custom properties into a consumer stylesheet
+  between generated markers so it can be verified byte-for-byte.
+- `assets/og-image.template.svg`, the social card template, so the badge on the card
+  is generated from the same tokens as every other badge.
+- `scripts/render-og-image.js`, which rasterises the card. It checks that Inter and
+  JetBrains Mono resolve to themselves and refuses to render otherwise, because
+  fontconfig silently substitutes a fallback whose metrics shift the layout.
+- `icons.faviconSize`, `icons.faviconFile` and the `ogImage` section in `tokens.json`.
+
+### Fixed
+
+- `check-icons.js` measured the wordmark by upscaling a small committed PNG, which
+  dropped the antialiased edge column and reported the centre as 52.08 instead of
+  50.00. It now renders the SVG at high resolution and tightened the tolerance to
+  0.3 viewBox units.
+- `syncCss` built its marker `RegExp` from the raw marker text, so the `*` in the
+  `/*` comment prefix made every stylesheet report `missing block`. The markers are
+  now escaped before matching.

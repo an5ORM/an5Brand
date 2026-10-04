@@ -39,6 +39,7 @@ function badgeAttrs(badge) {
  */
 function layoutWordmark(font, wordmark, fontSize) {
   const glyphs = [...wordmark.text].map((char) => font.charToGlyph(char));
+  const tracking = wordmark.tracking || 0;
   let pen = 0;
   let d = '';
   const box = { left: Infinity, right: -Infinity, top: Infinity, bottom: -Infinity };
@@ -51,7 +52,7 @@ function layoutWordmark(font, wordmark, fontSize) {
     box.right = Math.max(box.right, x2);
     box.top = Math.min(box.top, y1);
     box.bottom = Math.max(box.bottom, y2);
-    pen += glyph.advanceWidth * (fontSize / font.unitsPerEm);
+    pen += glyph.advanceWidth * (fontSize / font.unitsPerEm) + tracking;
   }
 
   return { d: d.trim(), box };
@@ -60,15 +61,36 @@ function layoutWordmark(font, wordmark, fontSize) {
 function buildWordmark(tokens) {
   const { wordmark } = tokens;
   const font = opentype.loadSync(path.resolve(ROOT, wordmark.fontFile));
+  const embolden = wordmark.embolden || 0;
+
+  // Emboldening strokes the outline, which grows the ink by `embolden` on every
+  // side, so solve for a font size where the stroked cap height is still exact.
   const probe = layoutWordmark(font, wordmark, 1000);
-  const fontSize = (wordmark.capHeight * 1000) / (probe.box.bottom - probe.box.top);
+  const probeCap = probe.box.bottom - probe.box.top;
+  const fontSize = (1000 * (wordmark.capHeight - 2 * embolden)) / probeCap;
 
   const { d, box } = layoutWordmark(font, wordmark, fontSize);
+  const ink = {
+    left: box.left - embolden,
+    right: box.right + embolden,
+    top: box.top - embolden,
+    bottom: box.bottom + embolden,
+  };
+
   return {
     d,
-    translateX: wordmark.centerX - (box.left + box.right) / 2,
-    translateY: wordmark.baseline - box.bottom,
+    strokeWidth: embolden * 2,
+    translateX: wordmark.centerX - (ink.left + ink.right) / 2,
+    translateY: wordmark.baseline - ink.bottom,
   };
+}
+
+function wordmarkGroup(mark, paint) {
+  const paintAttrs = paint ? ` ${paint}` : '';
+  const stroke = mark.strokeWidth
+    ? ` stroke-width="${mark.strokeWidth}" stroke-linejoin="round"`
+    : '';
+  return `<g transform="translate(${mark.translateX.toFixed(PRECISION)} ${mark.translateY.toFixed(PRECISION)})"${paintAttrs}${stroke}>\n    <path d="${mark.d}"/>\n  </g>`;
 }
 
 /** Full-colour badge, for webviews, the marketplace listing and documentation. */
@@ -83,9 +105,7 @@ function wordmarkSvg(tokens, size) {
     </linearGradient>
   </defs>
   <rect ${badgeAttrs(badge)} fill="url(#an5-gradient)"/>
-  <g transform="translate(${mark.translateX.toFixed(PRECISION)} ${mark.translateY.toFixed(PRECISION)})" fill="${color.foreground.onBadge}">
-    <path d="${mark.d}"/>
-  </g>
+  ${wordmarkGroup(mark, `fill="${color.foreground.onBadge}" stroke="${color.foreground.onBadge}"`)}
 </svg>
 `;
 }
@@ -99,7 +119,7 @@ function activitySvg(tokens) {
   const size = icons.activitySize;
   const mark = buildWordmark(tokens);
   const shape = badgeAttrs(badge);
-  const letters = `<g transform="translate(${mark.translateX.toFixed(PRECISION)} ${mark.translateY.toFixed(PRECISION)})"><path d="${mark.d}"/></g>`;
+  const letters = wordmarkGroup(mark, 'fill="black" stroke="black"');
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="${size}" height="${size}">
   <!-- Knockout letters stay visible when the host renders this as a monochrome surface. -->
   <defs>
