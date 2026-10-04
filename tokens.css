@@ -1,0 +1,14 @@
+:root {
+  /* AN5 brand tokens. Generated source of truth: tokens.json */
+  --an5-gradient-start: #38bdf8;
+  --an5-gradient-end: #6366f1;
+  --an5-gradient: linear-gradient(135deg, #38bdf8 0%, #6366f1 100%);
+
+  --an5-on-badge: #ffffff;
+  --an5-on-surface: #c5c5c5;
+
+  /* Badge is 90 x 52 on a 100 x 100 canvas, so every surface keeps the ratio. */
+  --an5-canvas: 100;
+  --an5-badge-ratio: 1.7308; /* 90 / 52 */
+  --an5-badge-radius: 8;
+}

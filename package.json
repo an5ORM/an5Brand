@@ -1,0 +1,42 @@
+{
+  "name": "@an5/brand",
+  "version": "1.0.0",
+  "description": "AN5 organisation brand tokens, wordmark font subset and generated icon set.",
+  "keywords": [
+    "an5",
+    "brand",
+    "logo",
+    "icons",
+    "design-tokens"
+  ],
+  "license": "MIT",
+  "author": "an5ORM",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/an5ORM/an5Brand.git"
+  },
+  "main": "scripts/generate-icons.js",
+  "files": [
+    "tokens.json",
+    "tokens.css",
+    "assets",
+    "icons",
+    "scripts",
+    "LICENSE",
+    "README.md"
+  ],
+  "scripts": {
+    "generate:icons": "node scripts/generate-icons.js",
+    "check": "node scripts/check-icons.js",
+    "test": "node scripts/check-icons.js",
+    "subset:font": "node scripts/subset-font.js"
+  },
+  "devDependencies": {
+    "opentype.js": "^1.3.4",
+    "sharp": "^0.35.3",
+    "subset-font": "^2.4.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
